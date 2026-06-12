@@ -5,6 +5,7 @@
 #include <PubSubClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <ESP8266mDNS.h>
 #include "my_config.h"
 
 
@@ -57,7 +58,7 @@ unsigned long rePublishAutoDiscoverInterval = 5 * 60 * 1000; // 5 min
 ESP8266WebServer server(8080);
 ESP8266HTTPUpdateServer httpUpdater;
 
-#define PIN D5
+#define PIN 14 //D5
 #define COOL B00000000
 #define HEAT B00001000
 #define AUTO B00000100
@@ -145,6 +146,11 @@ void setup_wifi()
     Serial.println(WiFi.localIP());
 
     WiFi.hostname(HARDWARE_HOSTNAME);
+
+    if (!MDNS.begin("esp8266")) {
+        Serial.println("Error setting up MDNS responder!");
+    }
+    Serial.println("mDNS responder started");    
 }
 
 void MQTT_reconnect()
@@ -579,10 +585,10 @@ void setup()
     delay(500);
 
     // OTA webserver
-    // httpUpdater.setup(&server);
-    // server.on("/", HTTP_GET, []()
-    //           { server.send(200, "text/plain", "Ok"); });
-    // server.begin();
+    httpUpdater.setup(&server);
+    server.on("/", HTTP_GET, []()
+               { server.send(200, "text/plain", "Ok"); });
+    server.begin();
 
     client.setServer(mqtt_server, 1883);
     client.setCallback(mqttMsgReceivedCallBack);
